@@ -3,6 +3,9 @@
 *.o
 *.so
 
+.devcontainer/
+
+
 # haskell stuff
 .ghc.environment.*
 dist

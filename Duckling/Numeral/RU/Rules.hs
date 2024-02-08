@@ -7,6 +7,8 @@
 
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use lambda-case" #-}
 
 module Duckling.Numeral.RU.Rules
   ( rules
@@ -138,6 +140,53 @@ ruleInteger6 = Rule
   , prod = \tokens -> case tokens of
       (Token RegexMatch (GroupMatch (match:_)):_) ->
         HashMap.lookup (Text.toLower match) hundredsMap >>= integer
+      _ -> Nothing
+  }
+
+rulePowersOfTen :: Rule
+rulePowersOfTen = Rule
+  { name = "powers of tens"
+  , pattern =
+    [ regex "(тысяч(а|и)?|миллион(а|ов)?|миллиард(а|ов)?)"
+    ]
+  , prod = \tokens -> case tokens of
+      (Token RegexMatch (GroupMatch (match:_)):_) -> case Text.toLower match of
+        "тысяч"     -> double 1e3 >>= withGrain 3 >>= withMultipliable
+        "тысяча"    -> double 1e3 >>= withGrain 3 >>= withMultipliable
+        "тысячи"    -> double 1e3 >>= withGrain 3 >>= withMultipliable
+        "миллион"   -> double 1e6 >>= withGrain 6 >>= withMultipliable
+        "миллиона"  -> double 1e6 >>= withGrain 6 >>= withMultipliable
+        "миллионов" -> double 1e6 >>= withGrain 6 >>= withMultipliable
+        "миллиард"  -> double 1e9 >>= withGrain 9 >>= withMultipliable
+        "миллиарда" -> double 1e9 >>= withGrain 9 >>= withMultipliable
+        "миллиардов"-> double 1e9 >>= withGrain 9 >>= withMultipliable
+        _           -> Nothing
+      _ -> Nothing
+  }
+
+ruleSum :: Rule
+ruleSum = Rule
+  { name = "intersect 2 numbers"
+  , pattern =
+    [ Predicate $ and . sequence [hasGrain, isPositive]
+    , Predicate $ and . sequence [not . isMultipliable, isPositive]
+    ]
+  , prod = \tokens -> case tokens of
+      (Token Numeral NumeralData{TNumeral.value = val1, TNumeral.grain = Just g}:
+       Token Numeral NumeralData{TNumeral.value = val2}:
+       _) | (10 ** fromIntegral g) > val2 -> double $ val1 + val2
+      _ -> Nothing
+  }
+
+ruleMultiply :: Rule
+ruleMultiply = Rule
+  { name = "compose by multiplication"
+  , pattern =
+    [ Predicate isPositive
+    , Predicate isMultipliable
+    ]
+  , prod = \tokens -> case tokens of
+      (token1:token2:_) -> multiply token1 token2
       _ -> Nothing
   }
 
@@ -323,8 +372,13 @@ rules =
   , ruleInteger4Genitive
   , ruleInteger5
   , ruleInteger6
+  , rulePowersOfTen
+  , ruleSum
+  , ruleMultiply
+  -- , ruleNumeralUnits
   , ruleInteger7
   , ruleInteger8
+  -- , ruleCombineSequentialNumbers
   , ruleIntegerAndAHalf
   , ruleDecimalOneAndAHalf
   , ruleIntegerWithThousandsSeparator

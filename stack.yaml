@@ -13,3 +13,5 @@ flags:
     _regex-posix-clib: true
 
 extra-package-dbs: []
+install-ghc: true
+system-ghc: false

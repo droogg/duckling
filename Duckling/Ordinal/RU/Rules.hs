@@ -8,6 +8,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoRebindableSyntax #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Duckling.Ordinal.RU.Rules
   ( rules
@@ -24,6 +25,12 @@ import Duckling.Numeral.Helpers (parseInt)
 import Duckling.Ordinal.Helpers
 import Duckling.Regex.Types
 import Duckling.Types
+
+import Duckling.Numeral.Helpers
+import Duckling.Numeral.Types (NumeralData (..))
+import qualified Duckling.Numeral.Types as TNumeral
+
+import Duckling.Ordinal.Types as TOrdinal
 
 ordinalsFirstthMap :: HashMap Text.Text Int
 ordinalsFirstthMap = HashMap.fromList
@@ -88,7 +95,7 @@ ruleOrdinal = Rule
   { name = "ordinal 21..99"
   , pattern =
     [ regex "(двадцать|тридцать|сорок|пятьдесят|шестьдесят|семьдесят|восемьдесят|девяносто)"
-    , regex "(перв|втор|трет|четв[её]рт|пят|шест|седьм|восьм|девят)(ье(го|й)?|ого|ому|ый|ой|ий|ая|ое|ья|ые|ым|ых)"
+    , regex "(перв|втор|трет|четв[её]рт|пят|шест|седьм|восьм|девят)(ь(его|ему|ей|ем|им|их|и|е)|ого|ому|ый|ой|ий|ая|ое|ья|ом|ые|ым|ых)"
     ]
   , prod = \tokens -> case tokens of
       (Token RegexMatch (GroupMatch (m1:_)):
@@ -111,9 +118,39 @@ ruleOrdinalDigits = Rule
       _ -> Nothing
   }
 
+-- ruleOrdinalSum :: Rule
+-- ruleOrdinalSum = Rule
+--   { name = "intersect 2 numbers"
+--   , pattern =
+--     [ Predicate $ and . sequence [hasGrain, isPositive]
+--     , Predicate $ and . sequence [not . isMultipliable]
+--     ]
+--   , prod = \tokens -> case tokens of
+--       (Token Numeral NumeralData{TNumeral.value = val1, TNumeral.grain = Just g}:
+--        Token Ordinal OrdinalData{TOrdinal.value = val2}:
+--        _) | (10 ** fromIntegral g) > fromIntegral val2 -> double $ val1 + fromIntegral val2
+--       _ -> Nothing
+--   }
+
+ruleOrdinalSum :: Rule
+ruleOrdinalSum = Rule
+  { name = "intersect 2 numbers"
+  , pattern =
+    [ Predicate $ and . sequence [hasGrain, isPositive]
+    , Predicate $ and . sequence [not . isMultipliable]
+    ]
+  , prod = \case
+      (Token Numeral NumeralData{TNumeral.value = val1, TNumeral.grain = Just g}:
+       Token Ordinal OrdinalData{TOrdinal.value = val2}:_) 
+       | (10 ** fromIntegral g) > fromIntegral val2 -> Just $ ordinal $ round val1 + val2
+      _ -> Nothing
+  }
+
+
 rules :: [Rule]
 rules =
   [ ruleOrdinal
   , ruleOrdinalDigits
   , ruleOrdinalsFirstth
+  , ruleOrdinalSum
   ]

@@ -1,39 +1,31 @@
-FROM haskell:8-buster AS builder
+# Используйте официальный образ Haskell с Debian Buster
+FROM haskell:8-buster
 
+# Установите необходимые системные зависимости
 RUN apt-get update -qq && \
-  apt-get install -qq -y libpcre3 libpcre3-dev build-essential pkg-config --fix-missing --no-install-recommends && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    apt-get install -qq -y libpcre3 libpcre3-dev build-essential pkg-config --fix-missing --no-install-recommends && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Создайте директорию для логов (если она вам необходима)
 RUN mkdir /log
 
+# Установите рабочую директорию для проекта
 WORKDIR /duckling
 
-ADD . .
-
+# Установите переменную окружения LANG
 ENV LANG=C.UTF-8
 
-RUN stack setup
+# Копируйте файлы проекта в контейнер
+#COPY . .
 
-ADD . .
+# Запустите stack setup для установки подходящей версии GHC
+# В зависимости от вашего stack.yaml
+# RUN stack setup
 
-# NOTE:`stack build` will use as many cores as are available to build
-# in parallel. However, this can cause OOM issues as the linking step
-# in GHC can be expensive. If the build fails, try specifying the
-# '-j1' flag to force the build to run sequentially.
-RUN stack install
+# Вы можете запустить сборку проекта здесь, если это нужно при сборке образа
+# RUN stack build
 
-FROM debian:buster
-
-ENV LANG C.UTF-8
-
-RUN apt-get update -qq && \
-  apt-get install -qq -y libpcre3 libgmp10 --no-install-recommends && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-COPY --from=builder /root/.local/bin/duckling-example-exe /usr/local/bin/
-
-EXPOSE 8000
-
-CMD ["duckling-example-exe", "-p", "8000"]
+# Задайте команду по умолчанию для контейнера
+# Например, запуск REPL или сервера
+# CMD ["stack", "repl"]

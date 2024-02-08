@@ -156,4 +156,43 @@ allExamples = concat
              , "-1200К"
              , "-.0012Г"
              ]
+  , examples (NumeralValue 1000000)
+             [ "1 миллион"
+             ]
+  , examples (NumeralValue 2000000)
+             [ "2 миллиона"
+             ]
+  , examples (NumeralValue 15000000)
+             [ "15 миллионов"
+             ]
+  , examples (NumeralValue 121000000)
+             [ "121 миллион"
+             ]
+  , examples (NumeralValue 1000)
+             [ "1 тысяча"
+             ]
+  , examples (NumeralValue 3000)
+             [ "3 тысячи"
+             ]
+  , examples (NumeralValue 10000)
+             [ "10 тысяч"
+             ]
+  , examples (NumeralValue 1000000000)
+             [ "1 миллиард"
+             ]
+  , examples (NumeralValue 10000000000)
+             [ "10 миллиардов"
+             ]
+  , examples (NumeralValue 10000000000)
+             [ "10 миллиарда"
+             ]
+  , examples (NumeralValue 1121)
+             [ "одна тысяча сто двадцать один"
+             ]
+  , examples (NumeralValue 2023)
+             [ "две тысячи двадцать три"
+             ]
+  , examples (NumeralValue 1123123)
+             [ "один миллион сто двадцать три тысячи сто двадцать три"
+             ]
   ]
