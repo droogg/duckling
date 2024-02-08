@@ -76,6 +76,14 @@ cardinalsMap = HashMap.fromList
   , ( "восемьдесят", 80 )
   , ( "девяносто", 90 )
   , ( "сто", 100 )
+  , ( "двести", 200)
+  , ( "триста", 300)
+  , ( "четыреста", 400)
+  , ( "пятьсот", 500)
+  , ( "шестьсот", 600)
+  , ( "семьсот", 700)
+  , ( "восемьсот", 800)
+  , ( "девятьсот", 900)
   ]
 
 ruleOrdinalsFirstth :: Rule
@@ -118,19 +126,24 @@ ruleOrdinalDigits = Rule
       _ -> Nothing
   }
 
--- ruleOrdinalSum :: Rule
--- ruleOrdinalSum = Rule
---   { name = "intersect 2 numbers"
---   , pattern =
---     [ Predicate $ and . sequence [hasGrain, isPositive]
---     , Predicate $ and . sequence [not . isMultipliable]
---     ]
---   , prod = \tokens -> case tokens of
---       (Token Numeral NumeralData{TNumeral.value = val1, TNumeral.grain = Just g}:
---        Token Ordinal OrdinalData{TOrdinal.value = val2}:
---        _) | (10 ** fromIntegral g) > fromIntegral val2 -> double $ val1 + fromIntegral val2
---       _ -> Nothing
---   }
+
+
+ruleHundredsOrdinal :: Rule
+ruleHundredsOrdinal = Rule
+  { name = "ordinal 100..999"
+  , pattern =
+    [ regex "(сто|двести|триста|четыреста|пятьсот|шестьсот|семьсот|восемьсот|девятьсот)"
+    , Predicate $ and . sequence [not . isMultipliable]
+    ]
+  , prod = \tokens -> case tokens of
+      (Token RegexMatch (GroupMatch (m1:_)):
+       Token Ordinal OrdinalData{TOrdinal.value = val2}:
+       _) -> do
+         dozen <- HashMap.lookup (Text.toLower m1) cardinalsMap
+        --  unit <- HashMap.lookup (Text.toLower m2) ordinalsFirstthMap
+         Just . ordinal $ dozen + val2
+      _ -> Nothing
+  }
 
 ruleOrdinalSum :: Rule
 ruleOrdinalSum = Rule
@@ -139,12 +152,26 @@ ruleOrdinalSum = Rule
     [ Predicate $ and . sequence [hasGrain, isPositive]
     , Predicate $ and . sequence [not . isMultipliable]
     ]
-  , prod = \case
+  , prod = \tokens -> case tokens of
       (Token Numeral NumeralData{TNumeral.value = val1, TNumeral.grain = Just g}:
-       Token Ordinal OrdinalData{TOrdinal.value = val2}:_) 
-       | (10 ** fromIntegral g) > fromIntegral val2 -> Just $ ordinal $ round val1 + val2
+       Token Ordinal OrdinalData{TOrdinal.value = val2}:
+       _) | (10 ** fromIntegral g) > fromIntegral val2 -> double $ val1 + fromIntegral val2
       _ -> Nothing
   }
+
+-- ruleOrdinalSum :: Rule
+-- ruleOrdinalSum = Rule
+--   { name = "intersect 2 numbers"
+--   , pattern =
+--     [ Predicate $ and . sequence [hasGrain, isPositive]
+--     , Predicate $ and . sequence [not . isMultipliable]
+--     ]
+--   , prod = \case
+--       (Token Numeral NumeralData{TNumeral.value = val1, TNumeral.grain = Just g}:
+--        Token Ordinal OrdinalData{TOrdinal.value = val2}:_) 
+--        | (10 ** fromIntegral g) > fromIntegral val2 -> Just $ ordinal $ round val1 + val2
+--       _ -> Nothing
+--   }
 
 
 rules :: [Rule]
@@ -152,5 +179,6 @@ rules =
   [ ruleOrdinal
   , ruleOrdinalDigits
   , ruleOrdinalsFirstth
+  , ruleHundredsOrdinal
   , ruleOrdinalSum
   ]
