@@ -9,6 +9,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoRebindableSyntax #-}
 {-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use lambda-case" #-}
 
 module Duckling.Ordinal.RU.Rules
   ( rules
@@ -31,6 +33,7 @@ import Duckling.Numeral.Types (NumeralData (..))
 import qualified Duckling.Numeral.Types as TNumeral
 
 import Duckling.Ordinal.Types as TOrdinal
+import Data.Text
 
 ordinalsFirstthMap :: HashMap Text.Text Int
 ordinalsFirstthMap = HashMap.fromList
@@ -145,20 +148,6 @@ ruleHundredsOrdinal = Rule
       _ -> Nothing
   }
 
-ruleOrdinalSum :: Rule
-ruleOrdinalSum = Rule
-  { name = "intersect 2 numbers"
-  , pattern =
-    [ Predicate $ and . sequence [hasGrain, isPositive]
-    , Predicate $ and . sequence [not . isMultipliable]
-    ]
-  , prod = \tokens -> case tokens of
-      (Token Numeral NumeralData{TNumeral.value = val1, TNumeral.grain = Just g}:
-       Token Ordinal OrdinalData{TOrdinal.value = val2}:
-       _) | (10 ** fromIntegral g) > fromIntegral val2 -> double $ val1 + fromIntegral val2
-      _ -> Nothing
-  }
-
 -- ruleOrdinalSum :: Rule
 -- ruleOrdinalSum = Rule
 --   { name = "intersect 2 numbers"
@@ -166,12 +155,60 @@ ruleOrdinalSum = Rule
 --     [ Predicate $ and . sequence [hasGrain, isPositive]
 --     , Predicate $ and . sequence [not . isMultipliable]
 --     ]
---   , prod = \case
+--   , prod = \tokens -> case tokens of
 --       (Token Numeral NumeralData{TNumeral.value = val1, TNumeral.grain = Just g}:
---        Token Ordinal OrdinalData{TOrdinal.value = val2}:_) 
---        | (10 ** fromIntegral g) > fromIntegral val2 -> Just $ ordinal $ round val1 + val2
+--        Token Ordinal OrdinalData{TOrdinal.value = val2}:
+--        _) | (10 ** fromIntegral g) > fromIntegral val2 -> double $ val1 + fromIntegral val2
 --       _ -> Nothing
 --   }
+
+ruleOrdinalSum :: Rule
+ruleOrdinalSum = Rule
+  { name = "intersect 2 numbers"
+  , pattern =
+    [ Predicate $ and . sequence [hasGrain, isPositive]
+    , Predicate $ and . sequence [not . isMultipliable]
+    ]
+  , prod = \case
+      (Token Numeral NumeralData{TNumeral.value = val1, TNumeral.grain = Just g}:
+       Token Ordinal OrdinalData{TOrdinal.value = val2}:_) 
+       | (10 ** fromIntegral g) > fromIntegral val2 -> Just $ ordinal $ round val1 + val2
+      _ -> Nothing
+  }
+
+additionalNumMap :: HashMap Text.Text Int
+additionalNumMap = HashMap.fromList
+  [ ( "одно", 1 )
+  , ( "двух", 2 )
+  , ( "трех", 3 )
+  , ( "четырех", 4 )
+  , ( "пяти", 5 )
+  , ( "шести", 6 )
+  , ( "семи", 7 )
+  , ( "восьми", 8 )
+  , ( "девяти", 9 )
+  ]
+
+additionalUnitMap :: HashMap Text.Text Int
+additionalUnitMap = HashMap.fromList
+  [ ( "тысячн", 1000)
+  , ( "миллионн",  1000000)
+  , ( "миллиардн", 1000000000)
+  ]
+
+ruleNumeralOrdinal :: Rule
+ruleNumeralOrdinal = Rule
+  { name = "numeral ordinal (двухтысячный, трехмиллионный, пятимиллиардный)"
+  , pattern =
+    [ regex "(одно|двух|трех|четырех|пяти|шести|семи|восьми|девяти)?(тысячн|миллионн|миллиардн)(ый|ого|ом|ым|ому)"
+    ]
+  , prod = \tokens -> case tokens of
+      (Token RegexMatch (GroupMatch (numeral:unit:_)):_) -> do
+         val <- HashMap.lookup (Text.toLower numeral) additionalNumMap
+         mult <- HashMap.lookup (Text.toLower unit) additionalUnitMap
+         Just . ordinal $ val * mult
+      _ -> Nothing
+  }
 
 
 rules :: [Rule]
@@ -181,4 +218,5 @@ rules =
   , ruleOrdinalsFirstth
   , ruleHundredsOrdinal
   , ruleOrdinalSum
+  , ruleNumeralOrdinal
   ]

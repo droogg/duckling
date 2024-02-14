@@ -881,6 +881,19 @@ ruleYear = Rule
       _ -> Nothing
   }
 
+ruleOrdinalYear :: Rule
+ruleOrdinalYear = Rule
+  { name = "ordinal year"
+  , pattern =
+    [ Predicate $ isOrdinalBetween 1000 2100
+    ]
+  , prod = \case
+      (token:_) -> do
+        y <- getIntValue token
+        tt $ year y
+      _ -> Nothing
+  }
+
 ruleNamedmonthDayofmonthNonOrdinal :: Rule
 ruleNamedmonthDayofmonthNonOrdinal = Rule
   { name = "<named-month> <day-of-month> (non ordinal)"
@@ -1145,6 +1158,7 @@ rules =
   , ruleWeekend
   , ruleWithinDuration
   , ruleYear
+  , ruleOrdinalYear
   , ruleYearLatent
   , ruleYearLatent2
   , ruleYyyymmdd

@@ -17,6 +17,7 @@ import Duckling.Locale
 import Duckling.Ordinal.Types
 import Duckling.Resolve
 import Duckling.Testing.Types
+import Duckling.Numeral.Types
 
 corpus :: Corpus
 corpus = (testContext {locale = makeLocale RU Nothing}, testOptions, allExamples)
@@ -196,5 +197,10 @@ allExamples = concat
              [ "две тысячи двадцать третий"
              , "две тысячи двадцать третьего"
              , "две тысячи двадцать третьем"
+             ]
+  , examples (OrdinalData 2000)
+             [ "двухтысячный"
+             , "двухтысячного"
+             , "двухтысячном"
              ]
   ]
